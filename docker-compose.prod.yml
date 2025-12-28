@@ -36,9 +36,7 @@ services:
       - doc-extract-network
 
   api:
-    build:
-      context: ./doc-extract-api
-      dockerfile: Dockerfile
+    image: sirajk78620/doc-extract-api:latest
     container_name: doc-extract-api
     ports:
       - "3000:3000"
@@ -51,7 +49,7 @@ services:
       - STRUCT_MODEL=llama3.2:latest
       - UPLOAD_DIR=/app/uploads
     volumes:
-      - ./doc-extract-api/uploads:/app/uploads
+      - ./uploads:/app/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -62,9 +60,7 @@ services:
     restart: unless-stopped
 
   web:
-    build:
-      context: ./doc-extract-web
-      dockerfile: Dockerfile
+    image: sirajk78620/doc-extract-web:latest
     container_name: doc-extract-web
     ports:
       - "4200:80"
@@ -81,4 +77,3 @@ volumes:
 networks:
   doc-extract-network:
     driver: bridge
-

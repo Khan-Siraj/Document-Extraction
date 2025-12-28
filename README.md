@@ -1,135 +1,141 @@
-# Document Extraction Web App
+# Document Extraction System
 
-A web application that extracts structured data from PDF documents using local OLLAMA models. Supports both raw Markdown text extraction and structured JSON extraction.
+AI-powered document extraction system using OLLAMA for local LLM processing.
 
-## 🚀 Features
+## 🚀 Quick Start with Docker
 
-- **100% Local Processing** - No external AI APIs, all processing happens locally
-- **Multi-page PDF Support** - Process documents with multiple pages
-- **Dual Extraction Modes** - Raw Markdown text or structured JSON
-- **Text-based Extraction** - Uses pdf-parse for fast, pure Node.js processing
-- **Real-time Status** - Track extraction job progress
-- **Export Results** - Download extracted data as JSON
+### Prerequisites
 
-## 📋 Prerequisites
+- Docker and Docker Compose installed
+- OLLAMA running locally with `llama3.2:latest` model
 
-1. **Node.js 20+**
-2. **Docker** (for PostgreSQL and Redis)
-3. **OLLAMA** installed locally
-
-### Install OLLAMA and Pull Required Model
+### Deploy
 
 ```bash
-# Install OLLAMA from https://ollama.ai
+# Download the docker-compose file
+wget https://raw.githubusercontent.com/YOUR_USERNAME/document-extraction/main/docker-compose.prod.yml
 
-# Pull the vision model
-ollama pull llama3.2-vision
+# Or create docker-compose.yml with the production configuration
+
+# Start all services
+docker-compose -f docker-compose.prod.yml up -d
+
+# Check status
+docker-compose -f docker-compose.prod.yml ps
 ```
 
-## 🛠️ Setup
+Access the application:
 
-### 1. Start Infrastructure Services
+- **Frontend**: http://localhost:4200
+- **API**: http://localhost:3000
 
-```bash
-docker-compose up -d
-```
+## 🐳 Docker Images
 
-This starts:
+- **API**: [`sirajk78620/doc-extract-api:latest`](https://hub.docker.com/r/sirajk78620/doc-extract-api)
+- **Web**: [`sirajk78620/doc-extract-web:latest`](https://hub.docker.com/r/sirajk78620/doc-extract-web)
 
-- PostgreSQL on port 5432
-- Redis on port 6379
+## 📋 Features
 
-### 2. Start Backend
+- **PDF Upload**: Upload PDF documents for extraction
+- **Dual Extraction Modes**:
+  - Markdown: Convert PDFs to clean markdown format
+  - Structured (JSON): Extract data based on predefined schemas
+- **Job Queue**: Background processing with Bull queue
+- **Real-time Status**: Track extraction job progress
+- **Export Results**: Download extracted data as JSON
 
-```bash
-cd doc-extract-api
-npm install
-npm run start:dev
-```
+## 🛠️ Tech Stack
 
-Backend runs on http://localhost:3000
+**Backend:**
 
-### 3. Start Frontend
+- NestJS
+- TypeORM + PostgreSQL
+- Bull (Redis queue)
+- OLLAMA for AI processing
 
-```bash
-cd doc-extract-web
-npm install
-ng serve
-```
+**Frontend:**
 
-Frontend runs on http://localhost:4200
-
-## 📁 Project Structure
-
-```
-DOCUMENT_EXTRACTION/
-├── docker-compose.yml          # PostgreSQL + Redis
-├── doc-extract-api/            # NestJS Backend
-│   ├── src/
-│   │   ├── documents/          # Upload & document management
-│   │   ├── extraction/         # Queue processor & extraction logic
-│   │   ├── ollama/             # OLLAMA API integration
-│   │   └── results/            # Results endpoints
-│   └── .env                    # Configuration
-└── doc-extract-web/            # Angular Frontend
-    └── src/app/
-        ├── pages/              # Upload, Detail, History
-        └── services/           # API service
-```
+- Angular
+- RxJS
+- Bootstrap
 
 ## 🔧 Configuration
 
-Edit `doc-extract-api/.env`:
+### Environment Variables
+
+Create a `.env` file or modify docker-compose:
 
 ```env
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/doc_extract
-REDIS_HOST=localhost
+DATABASE_URL=postgresql://postgres:postgres@postgres:5432/doc_extract
+REDIS_HOST=redis
 REDIS_PORT=6379
-OLLAMA_BASE_URL=http://localhost:11434
-VISION_MODEL=llama3.2-vision
-STRUCT_MODEL=nuextract
-UPLOAD_DIR=./uploads
+OLLAMA_BASE_URL=http://host.docker.internal:11434
+VISION_MODEL=llama3.2:latest
+STRUCT_MODEL=llama3.2:latest
 ```
 
-## 📡 API Endpoints
+### OLLAMA Setup
 
-| Method | Endpoint                               | Description               |
-| ------ | -------------------------------------- | ------------------------- |
-| POST   | `/api/documents/upload`                | Upload PDF for extraction |
-| GET    | `/api/documents`                       | List all documents        |
-| GET    | `/api/documents/:id`                   | Get document details      |
-| GET    | `/api/jobs/:id`                        | Get job status            |
-| GET    | `/api/results/:documentId`             | Get extraction result     |
-| GET    | `/api/results/:documentId/export/json` | Download JSON             |
-| GET    | `/api/health`                          | Health check              |
+The application requires OLLAMA running on your host machine:
 
-## 🎯 Usage
+```bash
+# Install OLLAMA
+# Visit https://ollama.ai
 
-1. Open http://localhost:4200
-2. Upload a PDF document
-3. Select document type and extraction mode
-4. Wait for processing to complete
-5. View and download results
+# Pull required model
+ollama pull llama3.2:latest
+```
 
-## 📄 Extraction Modes
+## 📦 Development Setup
 
-### Markdown Mode
+### Local Development
 
-Extracts text from PDF and converts to clean Markdown format using OLLAMA, preserving:
+```bash
+# Clone the repository
+git clone https://github.com/YOUR_USERNAME/document-extraction.git
+cd document-extraction
 
-- Headings and paragraphs
-- Lists and tables
-- Document structure
+# Start infrastructure (PostgreSQL, Redis)
+docker-compose up -d postgres redis
 
-### Structured Mode
+# Start API
+cd doc-extract-api
+npm install
+npm run start:dev
 
-Extracts data from PDF text into JSON format based on schema:
+# Start Web (in another terminal)
+cd doc-extract-web
+npm install
+npm start
+```
 
-- **InvoiceSchemaV1** - Invoice number, dates, vendor/customer info, line items, totals
+### Build Docker Images
 
-## 🔮 Future Enhancements
+```bash
+# Build all images
+docker-compose build
 
-- User authentication
-- Bulk upload
-- Additional schemas (receipts, forms, contracts)
-- Export to CSV/Excel
+# Or build individually
+docker build -t sirajk78620/doc-extract-api:latest ./doc-extract-api
+docker build -t sirajk78620/doc-extract-web:latest ./doc-extract-web
+```
+
+## 📝 API Endpoints
+
+- `POST /api/documents/upload` - Upload PDF
+- `GET /api/jobs/:id` - Get job status
+- `GET /api/results/:documentId` - Get extraction result
+- `GET /api/results/:documentId/export/json` - Export as JSON
+- `GET /health` - Health check
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Open a Pull Request
+
+## 📄 License
+
+MIT License
